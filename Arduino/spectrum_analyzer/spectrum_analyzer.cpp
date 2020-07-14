@@ -6,6 +6,7 @@
 #define MAX_FREQ 18000.0
 #define MIN_LEVEL_DB -160.0 // must be less than 0
 
+static char outstr[15];
 
 class MySpectrumAnalyzer {
    private:
@@ -13,16 +14,16 @@ class MySpectrumAnalyzer {
     int _numSamps;
     int cur_count = 0;
 
-    float *window;
+    double *window;
     float _Fs;
-    float *samples;
-    float *freqs_norm;
-    float *coeffs_cos;
-    float scale_factor;
-    float scale_factor_dB;
+    double *samples;
+    double *freqs_norm;
+    double *coeffs_cos;
+    double scale_factor;
+    double scale_factor_dB;
     
-    float *snm1_vec;
-    float *snm2_vec;
+    double *snm1_vec;
+    double *snm2_vec;
 
     void roll_samples_left() {
         /* takes [x[0], x[1]...] to [x[1], x[2]...]
@@ -34,19 +35,18 @@ class MySpectrumAnalyzer {
 
     void define_frequencies() {
         Serial.println();
-        float delta = (MAX_FREQ - MIN_FREQ) / (_numBands - 1);
+        double delta = (MAX_FREQ - MIN_FREQ) / (_numBands - 1);
         Serial.print("Creating SpectrumAnalyzer with ");
         Serial.print(_numBands);
-        Serial.print(" bands centered at [");
+        Serial.print(" bands on [");
+        Serial.print(MIN_FREQ, 0);
+        Serial.print(", ");
+        Serial.print(MAX_FREQ, 0);
+        Serial.println("]\n");
         for (int i = 0; i < _numBands; i++) {
             freqs[i] = MIN_FREQ + i * delta;
             freqs_norm[i] = 2.0 * PI * freqs[i] / (_Fs / 2);
-            Serial.print(freqs[i], 0);
-            if (i < _numBands - 1) {
-                Serial.print(", ");
-            }
         }
-        Serial.println("]");
     }
 
     void define_window() {
@@ -66,7 +66,7 @@ class MySpectrumAnalyzer {
         }
     }
 
-    float set_scale_factor() {
+    double set_scale_factor() {
       scale_factor = 0.0;
       for (int n=0; n<_numSamps; n++) {
         scale_factor += window[n];
@@ -79,8 +79,8 @@ class MySpectrumAnalyzer {
      *            Public facing functions          *
      ***********************************************/
    public:
-    float *freqs;
-    float *magnitudes;
+    double *freqs;
+    double *magnitudes;
     uint8_t *magnitudes_uint8;
 
 
@@ -89,20 +89,19 @@ class MySpectrumAnalyzer {
         _numSamps = numSamps;
         _Fs = Fs;
 
-        magnitudes = new float[_numBands];
+        magnitudes = new double[_numBands];
         magnitudes_uint8 = new uint8_t[_numBands];
-        freqs = new float[_numBands];       // need sample rate
-        freqs_norm = new float[_numBands];  // need sample rate
+        freqs = new double[_numBands];       // need sample rate
+        freqs_norm = new double[_numBands];  // need sample rate
         define_frequencies();
 
-        window = new float[numSamps];
-        samples = new float[numSamps];
+        window = new double[numSamps];
+        samples = new double[numSamps];
         define_window();
 
-        //coeffs_exp = new Complex[_numBands];
-        coeffs_cos = new float[_numBands];
-        snm1_vec = new float[_numBands];
-        snm2_vec = new float[_numBands];
+        coeffs_cos = new double[_numBands];
+        snm1_vec = new double[_numBands];
+        snm2_vec = new double[_numBands];
         define_goertzel_coeffs();
 
         set_scale_factor();
@@ -111,11 +110,11 @@ class MySpectrumAnalyzer {
 
     
 
-    float *get_magnitudes() {
+    double *get_magnitudes() {
         return magnitudes;
     }
 
-    void insert_sample(float new_sample) {
+    void insert_sample(double new_sample) {
         roll_samples_left();
         samples[_numSamps - 1] = new_sample;
         cur_count++;
@@ -132,7 +131,7 @@ class MySpectrumAnalyzer {
     }
 
     void update_mags_block() {
-        float snm1, snm2, s, real, imag, mag_dB;
+        double snm1, snm2, s, real, imag, mag_dB;
         for (int k = 0; k < _numBands; k++) {
             snm1 = 0.0;
             snm2 = 0.0;
@@ -146,7 +145,11 @@ class MySpectrumAnalyzer {
             imag = (snm2 * sin(freqs_norm[k])) / (_numSamps / 2.0);
             magnitudes[k] = sqrt(real * real + imag * imag);
             mag_dB = dB(magnitudes[k]) - scale_factor_dB;
-            magnitudes_uint8[k] = 255 - 255*mag_dB/MIN_LEVEL_DB ;
+           
+            magnitudes_uint8[k] = 255 - 255*mag_dB/MIN_LEVEL_DB;
+            if (mag_dB <= MIN_LEVEL_DB) {
+              magnitudes_uint8[k] = 0;
+            }
         }
     }
 
@@ -164,19 +167,23 @@ class MySpectrumAnalyzer {
         update_mags_block();
     }
 
-    float dB(float x) {
+    double dB(double x) {
       return 20 * log10(abs(x));
     }
 
     void print_mags_dB() {
-        for (int i = 0; i < _numBands-30; i++) {
-            Serial.print(freqs[i], 2);
-            Serial.print(": ");
-            Serial.print(dB(magnitudes[i]));
-            Serial.print(" dB   ");
-            Serial.print(dB(magnitudes[i]/scale_factor));
-            Serial.print(" dB   ");
-            Serial.print(magnitudes_uint8[i]);
+        for (int i = 0; i < _numBands; i++) {
+            dtostrf(freqs[i], 5, 0, outstr);
+            Serial.print(outstr);
+            Serial.print(" Hz: ");
+            dtostrf(dB(magnitudes[i]), 7, 1, outstr);
+            Serial.print(outstr);
+            Serial.print(" dB\t");
+            dtostrf(dB(magnitudes[i]/scale_factor), 7, 1, outstr);
+            Serial.print(outstr);
+            Serial.print(" dB\t");
+            dtostrf(magnitudes_uint8[i], 3, 0, outstr);
+            Serial.print(outstr);
             Serial.println("/255");
         }
     }
