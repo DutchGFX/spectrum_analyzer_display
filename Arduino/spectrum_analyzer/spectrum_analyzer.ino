@@ -1,4 +1,3 @@
-#include "microphone.cpp"
 #include "spectrum_analyzer.cpp"
 #include "timer_interrupt.cpp"
 
@@ -20,17 +19,14 @@ void setup() {
     Serial.begin(115200);
     pinMode(micPin, INPUT);
     analyzer = new MySpectrumAnalyzer(BANDS, BLOCKSIZE, FREQ);
-//    analyzer->test_window();
-//    analyzer->print_mags_dB();
-//    Serial.println();
-//    analyzer->test_max(4096);
-//    analyzer->print_mags_dB();
+    analyzer->test_window();
+    analyzer->print_mags_dB();
     TimerInterrupt test = TimerInterrupt(FREQ, sample);
 }
 
 void loop() {
-    analyzer->update_if_full(test_callback);
+//    analyzer->update_if_full(test_callback);
 
 //    Delay(100);
-    Serial.println(analogRead(micPin));
+//    Serial.println(analogRead(micPin));
 }
