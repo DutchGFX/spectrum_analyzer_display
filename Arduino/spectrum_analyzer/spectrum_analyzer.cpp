@@ -1,7 +1,11 @@
 #include "Arduino.h"
 
 #define _max_input 4096
-#define _post_scale_factor 25
+#define _post_scale_factor 1 // need to adjust
+#define MIN_FREQ 0.0
+#define MAX_FREQ 18000.0
+#define MIN_LEVEL_DB -160.0 // must be less than 0
+
 
 class MySpectrumAnalyzer {
    private:
@@ -15,13 +19,14 @@ class MySpectrumAnalyzer {
     float *freqs_norm;
     float *coeffs_cos;
     float scale_factor;
+    float scale_factor_dB;
     
     float *snm1_vec;
     float *snm2_vec;
 
     void roll_samples_left() {
-        // takes [x[0], x[1]...] to [x[1], x[2]...]
-        // last sample remains unchanged
+        /* takes [x[0], x[1]...] to [x[1], x[2]...]
+         last sample remains unchanged */
         for (int n = 0; n < _numSamps - 1; n++) {
             samples[n] = samples[n + 1];
         }
@@ -29,12 +34,12 @@ class MySpectrumAnalyzer {
 
     void define_frequencies() {
         Serial.println();
-        float delta = (18000.0 - 60.0) / (_numBands - 1);
+        float delta = (MAX_FREQ - MIN_FREQ) / (_numBands - 1);
         Serial.print("Creating SpectrumAnalyzer with ");
         Serial.print(_numBands);
         Serial.print(" bands centered at [");
         for (int i = 0; i < _numBands; i++) {
-            freqs[i] = 60.0 + i * delta;
+            freqs[i] = MIN_FREQ + i * delta;
             freqs_norm[i] = 2.0 * PI * freqs[i] / (_Fs / 2);
             Serial.print(freqs[i], 0);
             if (i < _numBands - 1) {
@@ -67,6 +72,7 @@ class MySpectrumAnalyzer {
         scale_factor += window[n];
       }
       scale_factor *= 2.0 * _max_input / _numSamps;
+      scale_factor_dB = dB(scale_factor);
     }
 
     /***********************************************
@@ -126,7 +132,7 @@ class MySpectrumAnalyzer {
     }
 
     void update_mags_block() {
-        float snm1, snm2, s, real, imag;
+        float snm1, snm2, s, real, imag, mag_dB;
         for (int k = 0; k < _numBands; k++) {
             snm1 = 0.0;
             snm2 = 0.0;
@@ -139,13 +145,14 @@ class MySpectrumAnalyzer {
             real = (snm1 - snm2 * cos(freqs_norm[k])) / (_numSamps / 2.0);
             imag = (snm2 * sin(freqs_norm[k])) / (_numSamps / 2.0);
             magnitudes[k] = sqrt(real * real + imag * imag);
-            magnitudes_uint8[k] = magnitudes[k] * 255 / scale_factor * _post_scale_factor;
+            mag_dB = dB(magnitudes[k]) - scale_factor_dB;
+            magnitudes_uint8[k] = 255 - 255*mag_dB/MIN_LEVEL_DB ;
         }
     }
 
     void test_window() {
         for (int n = 0; n < _numSamps; n++) {
-            insert_sample(window[n]);
+            insert_sample(window[n]*_max_input);
         }
         update_mags_block();
     }
@@ -157,11 +164,17 @@ class MySpectrumAnalyzer {
         update_mags_block();
     }
 
+    float dB(float x) {
+      return 20 * log10(abs(x));
+    }
+
     void print_mags_dB() {
         for (int i = 0; i < _numBands-30; i++) {
             Serial.print(freqs[i], 2);
             Serial.print(": ");
-            Serial.print(20 * log10(magnitudes[i]));
+            Serial.print(dB(magnitudes[i]));
+            Serial.print(" dB   ");
+            Serial.print(dB(magnitudes[i]/scale_factor));
             Serial.print(" dB   ");
             Serial.print(magnitudes_uint8[i]);
             Serial.println("/255");
