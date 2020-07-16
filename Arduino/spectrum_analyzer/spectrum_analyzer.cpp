@@ -47,6 +47,23 @@ class MySpectrumAnalyzer {
             sin_terms[k] = sin(freqs_norm[k]);
             freq_correction[k] = 15/(MAX_FREQ - MIN_FREQ) * (freqs[k] - MIN_FREQ);
         }
+
+        freqs[0] = 100;
+        freqs[1] = 250;
+        freqs[2] = 450;
+        freqs[3] = 565;
+        freqs[4] = 715;
+        freqs[5] = 900;
+        freqs[6] = 1125;
+        freqs[7] = 1400;
+        freqs[8] = 1750;
+        freqs[9] = 2250;
+        freqs[10] = 2800;
+        freqs[11] = 3150;
+        freqs[12] = 4000;
+        freqs[13] = 5000;
+        freqs[14] = 6400;
+        freqs[15] = 12500;
     }
 
     void define_window() {
