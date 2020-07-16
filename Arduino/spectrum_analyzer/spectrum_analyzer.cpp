@@ -16,8 +16,11 @@ class MySpectrumAnalyzer {
     double *cos_terms;
     double *sin_terms;
     double *coeffs_cos;
+    
     double scale_factor;
-    double scale_factor_dB;
+    double MAX_POSSIBLE_DB;
+    float TOP_DB;
+    float BOTTOM_DB;
     uint8_t *freq_correction;
 
     double *snm1_vec;
@@ -88,7 +91,9 @@ class MySpectrumAnalyzer {
             scale_factor += window[n];
         }
         scale_factor *= 2.0 * _max_input / _numSamps;
-        scale_factor_dB = dB(scale_factor);
+        MAX_POSSIBLE_DB = dB(scale_factor);
+        TOP_DB = MAX_POSSIBLE_DB - TOP_OFFSET_DB;
+        BOTTOM_DB = TOP_DB - RANGE_DB;
     }
 
 //    void update_dc_offset() {
@@ -172,10 +177,11 @@ class MySpectrumAnalyzer {
             imag = (snm2 * sin(freqs_norm[k])) / (_numSamps / 2.0);
             mag = sqrt(real * real + imag * imag);
             magnitudes[k] = lambda * mag + (1.0 - lambda) * magnitudes[k];  // add a smoothing operator
-            mag_dB = dB(magnitudes[k]) - scale_factor_dB;
+            // mag_dB = dB(magnitudes[k]) - scale_factor_dB;
 
-            magnitudes_uint8[k] = 255 - 255 * mag_dB / MIN_LEVEL_DB;
-            if (mag_dB <= MIN_LEVEL_DB) {
+           
+            magnitudes_uint8[k] = 255 - 255 * mag_dB / RANGE_DB;
+            if (mag_dB <= RANGE_DB) {
                 magnitudes_uint8[k] = 0;
             }
         }
@@ -198,10 +204,11 @@ class MySpectrumAnalyzer {
 
             mag = real * real + imag * imag;
             magnitudes[k] = lambda * mag + (1.0 - lambda) * magnitudes[k];  // add a smoothing operator
-            mag_dB = 0.5*dB(magnitudes[k]) - scale_factor_dB + freq_correction[k];
             
-            magnitudes_uint8[k] = 255 - 255 * mag_dB / MIN_LEVEL_DB;
-            if (mag_dB <= MIN_LEVEL_DB) {
+            mag_dB = 0.5*dB(magnitudes[k]) + freq_correction[k] ;
+            magnitudes_uint8[k] = 255 + 255 * (mag_dB - TOP_DB) / RANGE_DB;
+
+            if (mag_dB <= BOTTOM_DB) {
                 magnitudes_uint8[k] = 0;
             }
         }
@@ -250,6 +257,7 @@ class MySpectrumAnalyzer {
     }
 
     void print_mags_dB() {
+        Serial.println("-----------------------------");
         for (int i = 0; i < _numBands; i++) {
             dtostrf(freqs[i], 5, 0, outstr);
             Serial.print(outstr);
