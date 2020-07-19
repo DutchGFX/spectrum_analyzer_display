@@ -75,7 +75,7 @@ class RGBDisplay {
     }
   
     void drawScreen() {
-      for (int k = 0; k < (1 << _color_depth); k++)
+      for (int k = 0; k < _color_depth; k++)
       {
         for (int j = 0; j < (HEIGHT / 2); j++)
         {

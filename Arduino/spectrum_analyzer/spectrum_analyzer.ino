@@ -69,7 +69,7 @@ void loop() {
     Serial.println(xPortGetCoreID());
 
     for (;;) {
-      if (millis() > last_millis + 1000.0 / FPS) {
+      if (millis() > (last_millis + (1000.0 / FPS))) {
               mags = analyzer->getMagnitudes();
               led_display->updateDisplay(mags);
               last_millis = millis();

@@ -7,7 +7,7 @@
 
 
 #define prescale_factor 1 // default 1
-#define dc_offset 2210
+#define dc_offset 2332
 /***********************************
 *    Spectrum Analyzer Settings    *
 ***********************************/
