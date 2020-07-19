@@ -149,6 +149,7 @@ class MySpectrumAnalyzer {
 
     void insert_sample(uint32_t new_sample) {
         if (cur_count >= _numSamps) {
+            //Serial.println("HERE");
             return;
         }
         samples[cur_count] = new_sample - dc_offset;

@@ -16,6 +16,7 @@
 #define OE_PIN  13
 
 #define CLK_PIN 14
+//#define CLK_PIN GPIO_NUM_14
 
 #define HEIGHT  32
 #define WIDTH   64
@@ -75,6 +76,7 @@ class RGBDisplay {
     }
   
     void drawScreen() {
+      int t = millis();
       for (int k = 0; k < _color_depth; k++)
       {
         for (int j = 0; j < (HEIGHT / 2); j++)
@@ -88,6 +90,8 @@ class RGBDisplay {
             digitalWrite(G2_PIN, _green[j + 16][i] > k);
             digitalWrite(B2_PIN, _blue[j + 16][i] > k);
       
+            //gpio_set_level(CLK_PIN, 1);
+            //gpio_set_level(CLK_PIN, 0);
             digitalWrite(CLK_PIN, HIGH);
             digitalWrite(CLK_PIN, LOW);
           }
@@ -103,6 +107,9 @@ class RGBDisplay {
           enableLEDs();
         }
       }
+      t = millis() - t;
+      float t_f = (float)t / (float)_color_depth;
+      Serial.println(t_f);
     }
 
     void setPixel(uint8_t row, uint8_t col, uint8_t r, uint8_t g, uint8_t b) {

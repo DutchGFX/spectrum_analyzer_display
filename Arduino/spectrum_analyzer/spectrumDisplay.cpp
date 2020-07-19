@@ -74,6 +74,29 @@ void spectrumDisplay::updateBar(uint8_t index, uint8_t mag, uint16_t top) {
           _gfx->fillRect(index * _bar_width, HEIGHT - i, _bar_width, 1, index, i/2, _bars - index);
         }
     }
+
+    
+    if (_mode == 5) {
+        for (int i = 0; i < mag; i+=2)
+        {
+          if (index < (_bars / 2) && i > 16)
+          {
+            _gfx->fillRect(index * _bar_width, HEIGHT - i, _bar_width, 2, 0, 0, 16);
+            _gfx->fillRect(index * _bar_width, HEIGHT - i + (index & 1), 1, 1, 16, 16, 16);
+          }
+          else
+          {
+            if (i & 2)
+            {
+              _gfx->fillRect(index * _bar_width, HEIGHT - i, _bar_width, 2, 16, 0, 0);
+            }
+            else
+            {
+              _gfx->fillRect(index * _bar_width, HEIGHT - i, _bar_width, 2, 16, 16, 16);
+            }
+          }
+        }
+    }
     
 }
 
