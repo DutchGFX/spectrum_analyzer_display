@@ -7,7 +7,7 @@
 
 
 #define prescale_factor 1 // default 1
-#define dc_offset 2332
+#define dc_offset 2263
 /***********************************
 *    Spectrum Analyzer Settings    *
 ***********************************/
@@ -21,4 +21,5 @@
 #define micPin 35  //23 or 25 OK too
 #define FPS 40.0
 
-#define DROP_RATE 10
+#define DROP_RATE   10
+#define COLOR_MODE  4

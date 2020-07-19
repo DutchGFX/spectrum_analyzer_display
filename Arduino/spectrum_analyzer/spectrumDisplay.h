@@ -11,6 +11,7 @@ class spectrumDisplay
     void updateDisplay(uint8_t *mags);
     void checkDisplay();
     void setDrop(uint8_t s);
+    void setColorMode(uint8_t s);
     void drawScreen();
     
   private:

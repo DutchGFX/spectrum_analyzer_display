@@ -45,6 +45,7 @@ void setup() {
 
     led_display->checkDisplay();
     led_display->setDrop(DROP_RATE);
+    led_display->setColorMode(COLOR_MODE);
 
     delay(100);
 
