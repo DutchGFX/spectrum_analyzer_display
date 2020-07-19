@@ -76,7 +76,6 @@ class RGBDisplay {
     }
   
     void drawScreen() {
-      int t = millis();
       for (int k = 0; k < _color_depth; k++)
       {
         for (int j = 0; j < (HEIGHT / 2); j++)
@@ -107,9 +106,6 @@ class RGBDisplay {
           enableLEDs();
         }
       }
-      t = millis() - t;
-      float t_f = (float)t / (float)_color_depth;
-      Serial.println(t_f);
     }
 
     void setPixel(uint8_t row, uint8_t col, uint8_t r, uint8_t g, uint8_t b) {

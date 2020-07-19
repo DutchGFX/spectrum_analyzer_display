@@ -26,7 +26,7 @@ void setup() {
   mags[2] = 63;
 
   s->updateDisplay(mags);
-  s->setDrop(9);
+  s->setDrop(6);
 
   //create a task that will be executed in the Task1code() function, with priority 1 and executed on core 0
   xTaskCreatePinnedToCore(

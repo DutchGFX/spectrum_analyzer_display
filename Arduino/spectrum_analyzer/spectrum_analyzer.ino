@@ -64,6 +64,7 @@ void setup() {
 }
 
 int last_millis = millis();
+int color_millis = millis();
 void loop() {
     Serial.print("SpectrumAnalyzer running on core ");
     Serial.println(xPortGetCoreID());
@@ -73,6 +74,12 @@ void loop() {
             mags = analyzer->getMagnitudes();
             led_display->updateDisplay(mags);
             last_millis = millis();
+        }
+
+        if (millis() > color_millis + 5000)
+        {
+          led_display->cycleColorMode();
+          color_millis = millis();
         }
 
         if (analyzer->buffer_full()) {

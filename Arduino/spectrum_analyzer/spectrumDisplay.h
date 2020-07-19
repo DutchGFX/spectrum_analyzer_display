@@ -12,6 +12,7 @@ class spectrumDisplay
     void checkDisplay();
     void setDrop(uint8_t s);
     void setColorMode(uint8_t s);
+    void cycleColorMode();
     void drawScreen();
     
   private:
