@@ -11,17 +11,17 @@ class MySpectrumAnalyzer {
 
     double *window;
     float _Fs;
-    int32_t *samples;
+    int16_t *samples;
     double *freqs_norm;
     double *cos_terms;
     double *sin_terms;
-    double *coeffs_cos;
     
     double scale_factor;
     double MAX_POSSIBLE_DB;
     float TOP_DB;
     float BOTTOM_DB;
     uint8_t *freq_correction;
+    double mag_scale_dB;
 
     double *snm1_vec;
     double *snm2_vec;
@@ -79,12 +79,6 @@ class MySpectrumAnalyzer {
         }
     }
 
-    void define_goertzel_coeffs() {
-        for (int i = 0; i < _numBands; i++) {
-            coeffs_cos[i] = 2.0 * cos(freqs_norm[i]);
-        }
-    }
-
     double set_scale_factor() {
         scale_factor = 0.0;
         for (int n = 0; n < _numSamps; n++) {
@@ -94,6 +88,7 @@ class MySpectrumAnalyzer {
         MAX_POSSIBLE_DB = dB(scale_factor);
         TOP_DB = MAX_POSSIBLE_DB - TOP_OFFSET_DB;
         BOTTOM_DB = TOP_DB - RANGE_DB;
+        mag_scale_dB = dB(2.0 / _numSamps);
     }
 
 //    void update_dc_offset() {
@@ -135,13 +130,11 @@ class MySpectrumAnalyzer {
         define_frequencies();
 
         window = new double[numSamps];
-        samples = new int32_t[numSamps];
+        samples = new int16_t[numSamps];
         define_window();
 
-        coeffs_cos = new double[_numBands];
         snm1_vec = new double[_numBands];
         snm2_vec = new double[_numBands];
-        define_goertzel_coeffs();
 
         set_scale_factor();
         reset_values();
@@ -170,7 +163,7 @@ class MySpectrumAnalyzer {
             snm2 = 0.0;
             s = 0.0;
             for (int n = 0; n < _numSamps; n++) {
-                s = prescale_factor * samples[n] * window[n] + coeffs_cos[k] * snm1 - snm2;  // add window back
+                s = prescale_factor * samples[n] * window[n] + 2 * cos_terms[k] * snm1 - snm2;  // add window back
                 snm2 = snm1;
                 snm1 = s;
             }
@@ -191,22 +184,24 @@ class MySpectrumAnalyzer {
     void update_mags_recursive() {
         double s, real, imag, mag_dB, mag;
         for (int k = 0; k < _numBands; k++) {
-            s = prescale_factor * samples[cur_count - 1] * window[cur_count - 1] + coeffs_cos[k] * snm1_vec[k] - snm2_vec[k];
+            s = prescale_factor * samples[cur_count - 1] * window[cur_count - 1] + 2*cos_terms[k] * snm1_vec[k] - snm2_vec[k];
             snm2_vec[k] = snm1_vec[k];
             snm1_vec[k] = s;
         }
     }
 
     void update_mags_after_block() {
-        double s, real, imag, mag_dB, mag;
+        double s, real, imag, mag_dB, mag, snm1, snm2;
         for (int k = 0; k < _numBands; k++) {
-            real = (snm1_vec[k] - snm2_vec[k] * cos_terms[k]) / (_numSamps / 2.0);
-            imag = (snm2_vec[k] * sin_terms[k]) / (_numSamps / 2.0);
+            snm1 = snm1_vec[k];
+            snm2 = snm2_vec[k];
+            // mag = snm1_vec[k]*snm1_vec[k] + snm2_vec[k]*snm2_vec[k] - 2*cos_terms[k]*snm1_vec[k]*snm2_vec[k];
+            mag = snm1*snm1 + snm2*snm2 - 2*cos_terms[k]*snm1*snm2;
 
-            mag = real * real + imag * imag;
             magnitudes[k] = lambda * mag + (1.0 - lambda) * magnitudes[k];  // add a smoothing operator
+            // magnitudes[k] = lambda * (mag -  magnitudes[k]) +  magnitudes[k];  // add a smoothing operator
             
-            mag_dB = 0.5*dB(magnitudes[k]) + freq_correction[k] ;
+            mag_dB = 0.5*dB(magnitudes[k]) + freq_correction[k] + mag_scale_dB;
             magnitudes_uint8[k] = 255 + 255 * (mag_dB - TOP_DB) / RANGE_DB;
 
             if (mag_dB <= BOTTOM_DB) {
@@ -250,7 +245,7 @@ class MySpectrumAnalyzer {
     }
 
     double dB(double x) {
-        return 20 * log10(abs(x));
+        return 20 * log10f(abs(x));
     }
 
     uint8_t *getMagnitudes() {
