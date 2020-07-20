@@ -76,11 +76,13 @@ void loop() {
             last_millis = millis();
         }
 
-        if (millis() > color_millis + 5000)
+        
+        if (millis() > color_millis + CYCLE_TIME * 1000)
         {
           led_display->cycleColorMode();
           color_millis = millis();
         }
+        
 
         if (analyzer->buffer_full()) {
             analyzer->update_mags_after_block();

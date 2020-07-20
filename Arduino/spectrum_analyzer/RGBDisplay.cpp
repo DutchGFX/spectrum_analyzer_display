@@ -31,6 +31,7 @@ class RGBDisplay {
     uint8_t _green[HEIGHT][WIDTH];
     uint8_t _blue[HEIGHT][WIDTH];
     uint8_t _color_depth;
+    uint8_t pwm_patten[16] = {0, 8, 4, 12, 2, 10, 6, 14, 1, 9, 5, 13, 3, 11, 7, 15};
 
     void init_pins() {
     
@@ -77,16 +78,17 @@ class RGBDisplay {
     void drawScreen() {
       for (int k = 0; k < _color_depth; k++)
       {
+        uint8_t pwm = pwm_patten[k];
         for (int j = 0; j < (HEIGHT / 2); j++)
         {
           for (int i = 0; i < WIDTH; i++)
           {
-            digitalWrite(R1_PIN, _red[j][i] > k);
-            digitalWrite(G1_PIN, _green[j][i] > k);
-            digitalWrite(B1_PIN, _blue[j][i] > k);
-            digitalWrite(R2_PIN, _red[j + 16][i] > k);
-            digitalWrite(G2_PIN, _green[j + 16][i] > k);
-            digitalWrite(B2_PIN, _blue[j + 16][i] > k);
+            digitalWrite(R1_PIN, _red[j][i] > pwm);
+            digitalWrite(G1_PIN, _green[j][i] > pwm);
+            digitalWrite(B1_PIN, _blue[j][i] > pwm);
+            digitalWrite(R2_PIN, _red[j + 16][i] > pwm);
+            digitalWrite(G2_PIN, _green[j + 16][i] > pwm);
+            digitalWrite(B2_PIN, _blue[j + 16][i] > pwm);
       
             digitalWrite(CLK_PIN, HIGH);
             digitalWrite(CLK_PIN, LOW);

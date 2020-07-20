@@ -4,7 +4,7 @@
 #define WIDTH 64
 #define ORANGE_HEIGHT 16
 #define RED_HEIGHT 24
-#define MAX_MODE 9
+#define MAX_MODE 10
 
 spectrumDisplay::spectrumDisplay(int bars) {
     _bars = bars;
@@ -112,6 +112,10 @@ void spectrumDisplay::updateBar(uint8_t index, uint8_t mag, uint16_t top) {
 
     if (_mode == 8) {
         _gfx->fillRect(index * _bar_width, HEIGHT - mag, _bar_width, mag, _gfx->getRainbow(index));
+    }
+
+    if (_mode == 9) {
+        _gfx->fillRect(index * _bar_width, HEIGHT - mag, _bar_width, mag, _gfx->getRainbow(mag));
     }
     
 }

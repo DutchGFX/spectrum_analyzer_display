@@ -22,4 +22,4 @@
 #define FPS 40.0
 
 #define DROP_RATE   10
-#define COLOR_MODE  5
+#define COLOR_MODE  9
