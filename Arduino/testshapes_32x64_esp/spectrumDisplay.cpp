@@ -4,6 +4,7 @@
 #define WIDTH 64
 #define ORANGE_HEIGHT 16
 #define RED_HEIGHT 24
+#define MAX_MODE 9
 
 spectrumDisplay::spectrumDisplay(int bars) {
     _bars = bars;
@@ -15,7 +16,7 @@ spectrumDisplay::spectrumDisplay(int bars) {
     }
     _gfx = new GFXDisplay(16);
     _bar_width = WIDTH / bars;
-    _mode = 6; // 1 default
+    _mode = 2; // 1 default
     _drop = 3;
 }
 
@@ -50,30 +51,67 @@ void spectrumDisplay::updateBar(uint8_t index, uint8_t mag, uint16_t top) {
         }
         _gfx->fillRect(index * _bar_width, HEIGHT - ORANGE_HEIGHT, _bar_width, ORANGE_HEIGHT, _gfx->getColor(0, 15, 0));
         if (mag <= RED_HEIGHT) {
-            _gfx->fillRect(index * _bar_width, HEIGHT - mag, _bar_width, mag - ORANGE_HEIGHT, _gfx->getColor(15, 7, 0));
+            _gfx->fillRect(index * _bar_width, HEIGHT - mag, _bar_width, mag - ORANGE_HEIGHT, _gfx->getColor(15, 8, 0));
             return;
         }
         _gfx->fillRect(index * _bar_width, RED_HEIGHT - ORANGE_HEIGHT, _bar_width, RED_HEIGHT - ORANGE_HEIGHT, _gfx->getColor(15, 7, 0));
         _gfx->fillRect(index * _bar_width, HEIGHT - mag, _bar_width, mag - RED_HEIGHT, _gfx->getColor(15, 0, 0));
+        return;
     }
 
     if (_mode == 2) {
-        for (int i = 0; i <= mag; i++)
+        for (int i = 0; i < mag; i++)
         {
-          _gfx->fillRect(index * _bar_width, HEIGHT - i, _bar_width, 1, _gfx->getColor(i/2, (HEIGHT - i)  / 2, 0));
+          _gfx->fillRect(index * _bar_width, HEIGHT - i, _bar_width, 1, _gfx->getColor(i/2, (HEIGHT - i) / 2, 0));
         }
     }
     
     if (_mode == 3) {
-        _gfx->fillRect(index * _bar_width, HEIGHT - mag, _bar_width, mag, _gfx->getColor(_bars - index, 0, index));
+        _gfx->fillRect(index * _bar_width, HEIGHT - mag, _bar_width, mag, _gfx->getColor(_bars - index/2, 0, index/2));
     }
 
-    if (_mode == 6) {
-      
-        for (int i = 0; i <= mag; i++)
+    if (_mode == 4) {
+      for (int i = 0; i < mag; i++)
+      {
+        _gfx->fillRect(index * _bar_width, HEIGHT - i, _bar_width, 1, _gfx->getColor(index/2, i/2, (_bars - index)/2));
+      }
+    }
+    
+    if (_mode == 5) {
+      for (int i = 0; i < mag; i+=2)
+      {
+        if (index < (_bars / 2) && i > 15)
         {
-          _gfx->fillRect(index * _bar_width, HEIGHT - i, _bar_width, 1, _gfx->getRainbow(i));
+          _gfx->fillRect(index * _bar_width, HEIGHT - i, _bar_width, 2, _gfx->getColor(0, 0, 15));
+          _gfx->fillRect(index * _bar_width, HEIGHT - i + (index & 1), 1, 1, _gfx->getColor(15, 15, 15));
         }
+        else
+        {
+          if (i & 2)
+          {
+            _gfx->fillRect(index * _bar_width, HEIGHT - i, _bar_width, 2, _gfx->getColor(15, 0, 0));
+          }
+          else
+          {
+            _gfx->fillRect(index * _bar_width, HEIGHT - i, _bar_width, 2, _gfx->getColor(15, 15, 15));
+          }
+        }
+      }
+    }
+    
+    if (_mode == 6) {
+      for (int i = 0; i <= mag; i++)
+      {
+        _gfx->fillRect(index * _bar_width, HEIGHT - i, _bar_width, 1, _gfx->getRainbow(i));
+      }
+    }
+
+    if (_mode == 7) {
+        _gfx->fillRect(index * _bar_width, HEIGHT - mag, _bar_width, mag, _gfx->getColor(mag/2, HEIGHT - mag/2, 0));
+    }
+
+    if (_mode == 8) {
+        _gfx->fillRect(index * _bar_width, HEIGHT - mag, _bar_width, mag, _gfx->getRainbow(index));
     }
     
 }
@@ -81,7 +119,7 @@ void spectrumDisplay::updateBar(uint8_t index, uint8_t mag, uint16_t top) {
 void spectrumDisplay::checkDisplay() {
 
     Serial.println("Display check started");
-    _gfx->fillRect(6, 10, 20, 20, _gfx->getColor(2, 1, 0));
+    _gfx->fillRect(6, 10, 20, 20, _gfx->getColor(15, 7, 0));
 
     int t = millis() + 2000;
 
@@ -126,6 +164,14 @@ void spectrumDisplay::setDrop(uint8_t s) {
 
 void spectrumDisplay::setColorMode(uint8_t s) {
     _mode = s;
+}
+
+void spectrumDisplay::cycleColorMode() {
+    _mode++;
+    if (_mode == MAX_MODE)
+    {
+      _mode = 0;
+    }
 }
 
 

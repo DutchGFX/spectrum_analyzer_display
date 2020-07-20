@@ -16,7 +16,6 @@
 #define OE_PIN  13
 
 #define CLK_PIN 14
-//#define CLK_PIN GPIO_NUM_14
 
 #define HEIGHT  32
 #define WIDTH   64
@@ -89,8 +88,6 @@ class RGBDisplay {
             digitalWrite(G2_PIN, _green[j + 16][i] > k);
             digitalWrite(B2_PIN, _blue[j + 16][i] > k);
       
-            //gpio_set_level(CLK_PIN, 1);
-            //gpio_set_level(CLK_PIN, 0);
             digitalWrite(CLK_PIN, HIGH);
             digitalWrite(CLK_PIN, LOW);
           }
