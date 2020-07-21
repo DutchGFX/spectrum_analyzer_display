@@ -19,7 +19,8 @@
 #define MIN_FREQ 120.0
 #define MAX_FREQ 14900.0
 #define micPin 35  //23 or 25 OK too
-#define FPS 40.0
+#define FPS 60.0
 
 #define DROP_RATE   10
 #define COLOR_MODE  9
+#define CYCLE_TIME 3

@@ -1,4 +1,4 @@
-#include "spectrumDisplay.h"
+#include <spectrumDisplay.h>
 
 #define BARS 16
 
@@ -40,6 +40,9 @@ void setup() {
   delay(500); 
 
 
+  
+
+
 }
 
 //Task1code: blinks an LED every 1000 ms
@@ -59,6 +62,8 @@ void loop() {
   Serial.print("Task2 running on core ");
   Serial.println(xPortGetCoreID());
 
+
+/*
   for(;;) {
     for (int i = 0; i < BARS; i++)
     {
@@ -72,4 +77,5 @@ void loop() {
       delay(10);
     }
   }
+  */
 }

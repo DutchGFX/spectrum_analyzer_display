@@ -1,5 +1,5 @@
 #include "config.h"
-#include "spectrumDisplay.h"
+#include <spectrumDisplay.h>
 #include "spectrum_analyzer.cpp"
 #include "timer_interrupt.cpp"
 
