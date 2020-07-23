@@ -1,32 +1,46 @@
 #include "Arduino.h"
 #include "RGBDisplay.cpp"
+#include "letters.h"
 
-#define RAINBOW_SPACE 5
-#define WHITE         gfx->getColor(15, 15, 15)
-#define RED           gfx->getColor(15,  0,  0)
-#define ORANGE        gfx->getColor(15,  7, 15)
-#define YELLOW        gfx->getColor(15, 15,  0)
-#define LIGHT_GREEN   gfx->getColor( 7, 15,  0)
-#define GREEN         gfx->getColor( 0, 15,  0)
-#define TEAL          gfx->getColor( 0, 15,  7)
-#define LIGHT_BLUE    gfx->getColor( 0, 15, 15)
-#define MEDIUM_BLUE   gfx->getColor( 0, 7 , 15)
-#define BLUE          gfx->getColor( 0, 0 , 15)
-#define PURPLE        gfx->getColor( 7, 0 , 15)
-#define PINK          gfx->getColor( 15, 0, 15)
-#define MAJENTA       gfx->getColor( 15, 0,  7)
+#define RAINBOW_MAX     32
+#define RAINBOW_SPACE   (RAINBOW_MAX / 6)
+#define MAX_BRIGHTNESS  15
+#define HALF_BRIGHTNESS 7
+
+#define WHITE         gfx->getColor( MAX_BRIGHTNESS,  MAX_BRIGHTNESS,  MAX_BRIGHTNESS)
+#define RED           gfx->getColor( MAX_BRIGHTNESS,               0,               0)
+#define ORANGE        gfx->getColor( MAX_BRIGHTNESS, HALF_BRIGHTNESS,  MAX_BRIGHTNESS)
+#define YELLOW        gfx->getColor( MAX_BRIGHTNESS,  MAX_BRIGHTNESS,               0)
+#define LIGHT_GREEN   gfx->getColor(HALF_BRIGHTNESS,  MAX_BRIGHTNESS,               0)
+#define GREEN         gfx->getColor(              0,  MAX_BRIGHTNESS,               0)
+#define TEAL          gfx->getColor(              0,  MAX_BRIGHTNESS, HALF_BRIGHTNESS)
+#define LIGHT_BLUE    gfx->getColor(              0,  MAX_BRIGHTNESS,  MAX_BRIGHTNESS)
+#define MEDIUM_BLUE   gfx->getColor(              0, HALF_BRIGHTNESS,  MAX_BRIGHTNESS)
+#define BLUE          gfx->getColor(              0,               0,  MAX_BRIGHTNESS)
+#define PURPLE        gfx->getColor(HALF_BRIGHTNESS,               0,  MAX_BRIGHTNESS)
+#define PINK          gfx->getColor( MAX_BRIGHTNESS,               0,  MAX_BRIGHTNESS)
+#define MAJENTA       gfx->getColor( MAX_BRIGHTNESS,               0, HALF_BRIGHTNESS)
 
 class GFXDisplay {
   private:
     RGBDisplay *rgb;
     uint8_t _row;
     uint8_t _col;
+    unsigned _t;
+    int8_t _r_d;
+    int8_t _c_d;
+    uint16_t _colors[12] = {3840, 3967, 4080, 2032, 240, 247, 255, 127, 15, 1807, 3855, 3847};
+    uint8_t _color_index;
 
   public:
     GFXDisplay(uint8_t color_depth) {
       rgb = new RGBDisplay(color_depth);
       _row = 0;
       _col = 0;
+      _t = millis();
+      _r_d = 1;
+      _c_d = -1;
+      _color_index = 0;
       Serial.println("GFX Setup");  
       for (int i = 0; i < WIDTH; i++) {
         for (int j = 0; j < HEIGHT; j++) {
@@ -57,8 +71,6 @@ class GFXDisplay {
     }
 
     uint16_t getColor(uint8_t r, uint8_t g, uint8_t b) {
-
-
       uint16_t temp = r;
       temp = temp << 4;
       temp |= g;
@@ -69,45 +81,43 @@ class GFXDisplay {
     }
 
     uint16_t getRainbow(uint8_t c) {
-
-
       uint8_t r = 0;
       uint8_t g = 0;
       uint8_t b = 0;
 
       if (c < RAINBOW_SPACE * 1)
       {
-        r = 15;
-        g = (c - (RAINBOW_SPACE * 0)) * 15 / RAINBOW_SPACE;
+        r = MAX_BRIGHTNESS;
+        g = (c - (RAINBOW_SPACE * 0)) * MAX_BRIGHTNESS / RAINBOW_SPACE;
       }
       else if (c < RAINBOW_SPACE * 2)
       {
-        g = 15;
-        r = ((RAINBOW_SPACE * 2) - c) * 15 / RAINBOW_SPACE;
+        g = MAX_BRIGHTNESS;
+        r = ((RAINBOW_SPACE * 2) - c) * MAX_BRIGHTNESS / RAINBOW_SPACE;
       }
       else if (c < RAINBOW_SPACE * 3)
       {
-        g = 15;
-        b = (c - (RAINBOW_SPACE * 2)) * 15 / RAINBOW_SPACE;
+        g = MAX_BRIGHTNESS;
+        b = (c - (RAINBOW_SPACE * 2)) * MAX_BRIGHTNESS / RAINBOW_SPACE;
       }
       else if (c < RAINBOW_SPACE * 4)
       {
-        b = 15;
-        g = ((RAINBOW_SPACE * 4) - c) * 15 / RAINBOW_SPACE;
+        b = MAX_BRIGHTNESS;
+        g = ((RAINBOW_SPACE * 4) - c) * MAX_BRIGHTNESS / RAINBOW_SPACE;
       }
       else if (c < RAINBOW_SPACE * 5)
       {
-        b = 15;
-        r = (c - (RAINBOW_SPACE * 4)) * 15 / RAINBOW_SPACE;
+        b = MAX_BRIGHTNESS;
+        r = (c - (RAINBOW_SPACE * 4)) * MAX_BRIGHTNESS / RAINBOW_SPACE;
       }
       else if (c < RAINBOW_SPACE * 6)
       {
-        r = 15;
-        b = ((RAINBOW_SPACE * 6) - c) * 15 / RAINBOW_SPACE;
+        r = MAX_BRIGHTNESS;
+        b = ((RAINBOW_SPACE * 6) - c) * MAX_BRIGHTNESS / RAINBOW_SPACE;
       }
       else
       {
-        r = 15;
+        r = MAX_BRIGHTNESS;
       }
       
       uint16_t temp = r;
@@ -124,16 +134,12 @@ class GFXDisplay {
     }
 
     void printLetter(char letter, uint16_t c) {
+
       if (letter == ' ')
       {
         if (_col != 0)
         {
-          _col++; 
-          if (_col > 58)
-          {
-            _col = 0;
-            _row += 8;
-          }
+          _col++;
         }
         return;
       }
@@ -148,273 +154,14 @@ class GFXDisplay {
       uint8_t g = (c >> 4) & 15;
       uint8_t b = c & 15;
 
-      uint8_t letters[26][8] = {
-        // a
-       {0b00000000,
-        0b00000000,
-        0b00000000,
-        0b00011100,
-        0b00100010,
-        0b00100110,
-        0b10011010,
-        0b00000000},
 
-        // b
-       {0b00100000,
-        0b00100000,
-        0b00100000,
-        0b00111100,
-        0b00100010,
-        0b00100010,
-        0b10011100,
-        0b00000000},
+      uint8_t index = letter - 'A';
 
-        // c
-       {0b00000000,
-        0b00000000,
-        0b00000000,
-        0b00011100,
-        0b00100000,
-        0b10100000,
-        0b00011100,
-        0b00000000},
-
-        // d
-       {0b00000010,
-        0b00000010,
-        0b00000010,
-        0b00011110,
-        0b00100010,
-        0b00100010,
-        0b10011100,
-        0b00000000},
-
-        // e
-       {0b00000000,
-        0b00000000,
-        0b00011000,
-        0b00100100,
-        0b00111000,
-        0b10100000,
-        0b00011100,
-        0b00000000},
-
-        // f
-       {0b00000100,
-        0b00001010,
-        0b00001000,
-        0b00001000,
-        0b00011100,
-        0b10001000,
-        0b00001000,
-        0b00000000},
-
-        // g
-       {0b00000000,
-        0b00000000,
-        0b00000000,
-        0b00011000,
-        0b00100100,
-        0b10011100,
-        0b00000100,
-        0b00011000},
-
-        // h
-       {0b00000000,
-        0b00010000,
-        0b00010000,
-        0b00010000,
-        0b00011100,
-        0b10010010,
-        0b00010010,
-        0b00000000},
-
-        // i
-       {0b00000000,
-        0b00000000,
-        0b00010000,
-        0b10000000,
-        0b00010000,
-        0b00010000,
-        0b00010000,
-        0b00000000},
-
-        // j
-       {0b00000000,
-        0b00000000,
-        0b00001000,
-        0b00000000,
-        0b10001000,
-        0b00001000,
-        0b00101000,
-        0b00010000},
-
-        // k
-       {0b00000000,
-        0b00100000,
-        0b00100000,
-        0b00101000,
-        0b00110000,
-        0b10101000,
-        0b00100100,
-        0b00000000},
-
-        // l
-       {0b00000000,
-        0b00100000,
-        0b10100000,
-        0b00100000,
-        0b00100000,
-        0b00100000,
-        0b00100000,
-        0b00000000},
-
-        // m
-       {0b00000000,
-        0b00000000,
-        0b00000000,
-        0b00000000,
-        0b00010100,
-        0b00101010,
-        0b10101010,
-        0b00000000},
-
-        // n
-       {0b00000000,
-        0b00000000,
-        0b00000000,
-        0b00000000,
-        0b10010000,
-        0b00101000,
-        0b00101000,
-        0b00000000},
-
-        // o
-       {0b00000000,
-        0b00000000,
-        0b00000000,
-        0b00011000,
-        0b00100100,
-        0b10100100,
-        0b00011000,
-        0b00000000},
-
-        // p
-       {0b00000000,
-        0b00000000,
-        0b00000000,
-        0b00111000,
-        0b00100100,
-        0b10111000,
-        0b00100000,
-        0b00100000},
-
-        // q
-       {0b00000000,
-        0b00000000,
-        0b00000000,
-        0b00111000,
-        0b00101000,
-        0b10111000,
-        0b00001000,
-        0b00000100},
-
-        // r
-       {0b00000000,
-        0b00000000,
-        0b00000000,
-        0b00011000,
-        0b10100000,
-        0b00100000,
-        0b00100000,
-        0b00000000},
-
-        // s
-       {0b00000000,
-        0b00000000,
-        0b00011000,
-        0b00100000,
-        0b10010000,
-        0b00001000,
-        0b00110000,
-        0b00000000},
-
-        // t
-       {0b00000000,
-        0b00010000,
-        0b00010000,
-        0b00010000,
-        0b10111000,
-        0b00010000,
-        0b00010000,
-        0b00000000},
-
-        // u
-       {0b00000000,
-        0b00000000,
-        0b00000000,
-        0b00100100,
-        0b00100100,
-        0b10100100,
-        0b00011100,
-        0b00000000},
-
-        // v
-       {0b00000000,
-        0b00000000,
-        0b00000000,
-        0b00101000,
-        0b10101000,
-        0b00101000,
-        0b00010000,
-        0b00000000},
-
-        // w
-       {0b00000000,
-        0b00000000,
-        0b00000000,
-        0b00100010,
-        0b00101010,
-        0b00101010,
-        0b10010100,
-        0b00000000},
-
-        // x
-       {0b00000000,
-        0b00000000,
-        0b00000000,
-        0b00000000,
-        0b10101000,
-        0b00010000,
-        0b00101000,
-        0b00000000},
-
-        // y
-       {0b00000000,
-        0b00000000,
-        0b00000000,
-        0b00000000,
-        0b10101000,
-        0b00101000,
-        0b00010000,
-        0b00100000},
-
-        // z
-       {0b00000000,
-        0b00000000,
-        0b00000000,
-        0b00000000,
-        0b10111000,
-        0b00010000,
-        0b00111000,
-        0b00000000}
-                    };
-
-      uint8_t index = letter - 'a';
       uint8_t new_col;
       for (int i = 0; i < 8; i++)
       {
         uint8_t temp = letters[index][i];
+        Serial.println(temp);
         for (int j = 6; j >= 0; j--)
         {
           if ((temp >> j) & 1)
@@ -429,11 +176,6 @@ class GFXDisplay {
       }
       _col += new_col;
 
-      if (_col > 58)
-      {
-        _col = 0;
-        _row += 8;
-      }
 
 
     }
@@ -447,7 +189,53 @@ class GFXDisplay {
       }
     }
 
-    void scrollWord() {
+    void scrollWord(char *s, uint16_t c) {
 
+
+    }
+
+    void bounceWord(char *s, uint8_t d) {
+
+      uint16_t c = _colors[_color_index];
+
+      if (millis() > (_t + d))
+      {
+        clearScreen();
+        uint8_t old_row = _row;
+        uint8_t old_col = _col;
+
+        if (_col == 0)
+        {
+          _c_d = -_c_d;
+          _color_index += 5;
+        }
+
+        printWord(s, c);
+        _row = old_row + _r_d;
+
+        if (_row == 25 || _row == 0)
+        {
+          _r_d = -_r_d;
+          _color_index += 5;
+        }
+
+        if (_col == 64)
+        {
+          _c_d = -_c_d;
+          _color_index += 5;
+        }
+        _col = old_col + _c_d;
+
+        if (_color_index > 12)
+        {
+          _color_index -= 12;
+        }
+        _t = millis();
+      }
+    }
+
+    void setCursor(int r, int c) {
+      _row = r;
+      _col = c;
     }
 };

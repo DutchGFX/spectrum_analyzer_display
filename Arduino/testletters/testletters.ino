@@ -9,13 +9,11 @@ void setup() {
   
   gfx = new GFXDisplay(16);
 
-  
-  gfx->printWord("tyler ", BLUE);
-  gfx->printWord("is ", RED);
-  gfx->printWord("gay ", WHITE);
+  gfx->printWord("ABCDEFGHIJKL", RED);
   gfx->printLetter('\n', WHITE);
-  
-  gfx->printWord("and peter is a    god", PURPLE);
+  gfx->printWord("MNOPQRSTUVW", GREEN);
+  gfx->printLetter('\n', WHITE);
+  gfx->printWord("XYZ", BLUE);
 
 }
 
