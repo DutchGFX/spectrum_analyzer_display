@@ -137,10 +137,7 @@ class GFXDisplay {
 
       if (letter == ' ')
       {
-        if (_col != 0)
-        {
-          _col++;
-        }
+        _col++;
         return;
       }
       if (letter == '\n')
@@ -161,7 +158,7 @@ class GFXDisplay {
       for (int i = 0; i < 8; i++)
       {
         uint8_t temp = letters[index][i];
-        Serial.println(temp);
+
         for (int j = 6; j >= 0; j--)
         {
           if ((temp >> j) & 1)
@@ -230,6 +227,27 @@ class GFXDisplay {
         {
           _color_index -= 12;
         }
+        _t = millis();
+      }
+    }
+
+    void scrollWord(char *s, uint16_t c, uint8_t d) {
+
+      if (millis() > (_t + d))
+      {
+        clearScreen();
+        uint8_t old_col = _col;
+
+        printWord(s, c);
+        if (_col != 0)
+        {
+          _col = old_col - 1;
+        }
+        else
+        {
+          _col = 64;
+        }
+
         _t = millis();
       }
     }

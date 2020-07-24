@@ -2,8 +2,8 @@
 
 #define R1_PIN  23
 #define G1_PIN  22
-#define B1_PIN  32
-#define R2_PIN  33
+#define B1_PIN  15
+#define R2_PIN  16
 #define G2_PIN  21
 #define B2_PIN  25
 
@@ -23,6 +23,7 @@
 inline void disableLEDs() __attribute__((always_inline));
 inline void enableLEDs() __attribute__((always_inline));
 inline void loadShiftRegister() __attribute__((always_inline));
+
 
 
 class RGBDisplay {
@@ -55,18 +56,6 @@ class RGBDisplay {
       digitalWrite(CLK_PIN, LOW);
     }
     
-    void loadShiftRegister() {
-      digitalWrite(LAT_PIN, HIGH);
-      digitalWrite(LAT_PIN, LOW);
-    }
-    
-    void enableLEDs() {
-      digitalWrite(OE_PIN, LOW);
-    }
-    
-    void disableLEDs() {
-      digitalWrite(OE_PIN, HIGH);
-    }
 
   public:
     RGBDisplay(uint8_t color_depth) {
@@ -81,26 +70,46 @@ class RGBDisplay {
         {
           for (int i = 0; i < WIDTH; i++)
           {
-            digitalWrite(R1_PIN, _red[j][i] > k);
-            digitalWrite(G1_PIN, _green[j][i] > k);
-            digitalWrite(B1_PIN, _blue[j][i] > k);
-            digitalWrite(R2_PIN, _red[j + 16][i] > k);
-            digitalWrite(G2_PIN, _green[j + 16][i] > k);
-            digitalWrite(B2_PIN, _blue[j + 16][i] > k);
+            uint32_t s = 0, c = 0;
+
+            if (_red[j][i] > k)       s |= (1 << R1_PIN);
+            else                      c |= (1 << R1_PIN);
+            if (_green[j][i] > k)     s |= (1 << G1_PIN);
+            else                      c |= (1 << G1_PIN);
+            if (_blue[j][i] > k)      s |= (1 << B1_PIN);
+            else                      c |= (1 << B1_PIN);
+            if (_red[j+16][i] > k)    s |= (1 << R2_PIN);
+            else                      c |= (1 << R2_PIN);
+            if (_green[j+16][i] > k)  s |= (1 << G2_PIN);
+            else                      c |= (1 << G2_PIN);
+            if (_blue[j+16][i] > k)   s |= (1 << B2_PIN);
+            else                      c |= (1 << B2_PIN);
       
-            digitalWrite(CLK_PIN, HIGH);
-            digitalWrite(CLK_PIN, LOW);
+            GPIO.out_w1ts = s;
+            GPIO.out_w1tc = c;
+
+            GPIO.out_w1ts = 1 << CLK_PIN;
+            GPIO.out_w1tc = 1 << CLK_PIN;
           }
         
-          disableLEDs();
-          loadShiftRegister();
-          
-          digitalWrite(A_PIN, (j & 1));
-          digitalWrite(B_PIN, (j & 2));
-          digitalWrite(C_PIN, (j & 4));
-          digitalWrite(D_PIN, (j & 8));
-        
-          enableLEDs();
+          GPIO.out_w1ts = (1 << LAT_PIN) | (1 << OE_PIN);
+          GPIO.out_w1tc = 1 << LAT_PIN;
+
+          uint32_t s = 0, c = 0;
+
+          if ((j & 1))  s |= (1 << A_PIN);
+          else          c |= (1 << A_PIN);
+          if ((j & 2))  s |= (1 << B_PIN);
+          else          c |= (1 << B_PIN);
+          if ((j & 4))  s |= (1 << C_PIN);
+          else          c |= (1 << C_PIN);
+          if ((j & 8))  s |= (1 << D_PIN);
+          else          c |= (1 << D_PIN);
+
+          GPIO.out_w1ts = s;
+          GPIO.out_w1tc = c;
+
+          GPIO.out_w1tc = 1 << OE_PIN;
         }
       }
     }
